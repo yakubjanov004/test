@@ -106,29 +106,13 @@ def instaa(user):
         # Username ni faylga yozish (tekshirilgan deb belgilash)
         checked_set.add(user)
         
-        # Status code tekshirish
-        if url.status_code != 200:
-            print(W+f" [+] {Z} Status Code Error ({url.status_code}): {X}{user} - Response: {url.text[:100]}")
-            save_username(user, is_good=False)
-            return
-        
-        # Response bo'shligini tekshirish
-        if not url.text or len(url.text.strip()) == 0:
-            print(W+f" [+] {Z} Empty Response: {X}{user}")
-            save_username(user, is_good=False)
-            return
-        
-        # Response textni tekshirish
-        response_text = url.text.lower()
-        
         if '{"message":"feedback_required","spam":true,"feedback_title":"Try Again Later","feedback_message":"We limit how often you can do certain things on Instagram to protect our community. Tell us if you think we made a mistake.","feedback_url":"repute/report_problem/scraping/","feedback_appeal_label":"Tell us","feedback_ignore_label":"OK","feedback_action":"report_problem","status":"fail"}' in url.text:
-            print(W+f" [+] {Z} ErRoR UsEr (Spam Detected): {X}{user} ")
+            print(W+f" [+] {Z} ErRoR UsEr : {X}{user} ")
             save_username(user, is_good=False)
-        elif  '"errors": {"username":' in url.text or  '"code": "username_is_taken"' in url.text or '"username_is_taken"' in response_text:
-            print(W+f" [+] {Z} 𝗕𝗔𝗗 𝗨𝗦𝗘𝗥 (Username Taken): {X}{user} ")
+        elif  '"errors": {"username":' in url.text or  '"code": "username_is_taken"' in url.text:
+            print(W+f" [+] {Z} 𝗕𝗔𝗗 𝗨𝗦𝗘𝗥 : {X}{user} ")
             save_username(user, is_good=False)
-        elif '"status":"ok"' in response_text and '"errors":' not in response_text:
-            # Faqat to'g'ri response va "status":"ok" bo'lsa "good" deb belgilash
+        else:
             email=0
             print(W+f" [+] {F} 𝗚𝗢𝗢𝗗 𝗨𝗦𝗘𝗥 : {C}{user} ")
             email+=1
@@ -144,10 +128,6 @@ def instaa(user):
                 print(W+f" [+] {Z} ⚠️  Telegram timeout")
             except Exception as e:
                 print(W+f" [+] {Z} ⚠️  Telegram xatosi: {X}{str(e)[:30]}")
-        else:
-            # Noto'g'ri response - debug uchun ko'rsatish
-            print(W+f" [+] {Z} Unknown Response: {X}{user} - Response: {url.text[:200]}")
-            save_username(user, is_good=False)
     except requests.exceptions.Timeout:
         # Xatolik bo'lsa ham username ni yozib qo'yish
         checked_set.add(user)

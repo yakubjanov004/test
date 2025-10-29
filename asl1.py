@@ -41,15 +41,28 @@ def load_checked_usernames():
     """Tekshirilgan usernamelarni fayldan o'qish"""
     try:
         with open(CHECKED_FILE, 'r', encoding='utf-8') as f:
-            return set(line.strip() for line in f if line.strip())
+            checked = set()
+            for line in f:
+                line = line.strip()
+                if line:
+                    # "username - good user" formatidan faqat username ni oladi
+                    if ' - good user' in line:
+                        username = line.split(' - good user')[0].strip()
+                    else:
+                        username = line
+                    checked.add(username)
+            return checked
     except FileNotFoundError:
         return set()
 
-def save_username(username):
+def save_username(username, is_good=False):
     """Username ni faylga yozish"""
     try:
         with open(CHECKED_FILE, 'a', encoding='utf-8') as f:
-            f.write(username + '\n')
+            if is_good:
+                f.write(f"{username} - good user\n")
+            else:
+                f.write(username + '\n')
     except Exception as e:
         print(W+f" [+] {Z} Faylga yozish xatosi: {X}{str(e)[:30]}")
 
@@ -92,16 +105,18 @@ def instaa(user):
         
         # Username ni faylga yozish (tekshirilgan deb belgilash)
         checked_set.add(user)
-        save_username(user)
         
         if '{"message":"feedback_required","spam":true,"feedback_title":"Try Again Later","feedback_message":"We limit how often you can do certain things on Instagram to protect our community. Tell us if you think we made a mistake.","feedback_url":"repute/report_problem/scraping/","feedback_appeal_label":"Tell us","feedback_ignore_label":"OK","feedback_action":"report_problem","status":"fail"}' in url.text:
             print(W+f" [+] {Z} ErRoR UsEr : {X}{user} ")
+            save_username(user, is_good=False)
         elif  '"errors": {"username":' in url.text or  '"code": "username_is_taken"' in url.text:
             print(W+f" [+] {Z} 𝗕𝗔𝗗 𝗨𝗦𝗘𝗥 : {X}{user} ")
+            save_username(user, is_good=False)
         else:
             email=0
             print(W+f" [+] {F} 𝗚𝗢𝗢𝗗 𝗨𝗦𝗘𝗥 : {C}{user} ")
             email+=1
+            save_username(user, is_good=True)  # Good user bo'lsa belgilash
             hit=f"""𝗨𝗦𝗘𝗥𝗡𝗔𝗠𝗘 : @{user}"""
             try:
                 tg_response = requests.post(f'https://api.telegram.org/bot{token}/sendMessage?chat_id={id}&text={hit}', timeout=5)
@@ -116,19 +131,19 @@ def instaa(user):
     except requests.exceptions.Timeout:
         # Xatolik bo'lsa ham username ni yozib qo'yish
         checked_set.add(user)
-        save_username(user)
+        save_username(user, is_good=False)
         print(W+f" [+] {Z} Timeout: {X}{user} - Qayta urinib ko'rilmoqda...")
         sleep(2)
     except requests.exceptions.ConnectionError:
         # Xatolik bo'lsa ham username ni yozib qo'yish
         checked_set.add(user)
-        save_username(user)
+        save_username(user, is_good=False)
         print(W+f" [+] {Z} Connection Error: {X}{user} - Qayta urinib ko'rilmoqda...")
         sleep(3)
     except Exception as e:
         # Xatolik bo'lsa ham username ni yozib qo'yish
         checked_set.add(user)
-        save_username(user)
+        save_username(user, is_good=False)
         print(W+f" [+] {Z} Error: {X}{user} - {str(e)[:50]}")
         sleep(1)
 def users():
